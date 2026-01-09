@@ -1,4 +1,4 @@
-`torq` **- Graph compiler for deterministic inference.**
+`torq` **- Graph compiler for deterministic inference. (WIP)**
 
 Build complex systems from simple pieces:
 ```python
