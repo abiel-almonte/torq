@@ -111,8 +111,7 @@ class DAG(Runnable):
         )
         return dag
 
-    @staticmethod
-    def _execute(leaf_nodes, *args):
+    def __call__(self, *args):
         cache = {}
 
         def visit(node: DAGNode, *ins):
@@ -126,15 +125,12 @@ class DAG(Runnable):
 
             return outs
 
-        outs = tuple(visit(leaf, *args) for leaf in leaf_nodes)
+        outs = tuple(visit(leaf, *args) for leaf in self.leaves)
 
         if len(outs) == 1:
             outs = outs[0]
 
         return outs
-
-    def __call__(self, *args):
-        return self._execute(self.leaves, *args)
 
     def __iter__(self):
         visited = set()
