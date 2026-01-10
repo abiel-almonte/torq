@@ -4,17 +4,19 @@ from types import FunctionType
 from .utils import logging
 
 _pipe_registry: Tuple[Tuple[Type, Callable[..., Any]], ...] = (
-    (FunctionType, lambda f: f), # general function, same as lambda type
+    (FunctionType, lambda f: f),  # general function, same as lambda type
 )
 
 try:
-    import cv2 # opencv preloaded
+    import cv2  # opencv preloaded
+
     _pipe_registry += ((cv2.VideoCapture, lambda x: x.read()[-1]),)
 except ImportError:
     pass
 
 try:
-    import torch.nn as nn # pytorch preloaded
+    import torch.nn as nn  # pytorch preloaded
+
     _pipe_registry += ((nn.Module, lambda m: m.forward),)
 except ImportError:
     pass
