@@ -38,17 +38,17 @@ class Pipe(Runnable):
         has_input = ins is not None and len(ins) != 0
         has_output = outs is not None and len(outs) != 0
 
-        if not isinstance(opaque, FunctionType):
-            if not has_input:
-                pipe.__class__ = Input
-            elif not has_output:
-                pipe.__class__ = Output
-            elif has_input and has_output:
-                pipe.__class__ = Model
+        if not has_input:
+            pipe.__class__ = Input
+        elif not has_output:
+            pipe.__class__ = Output
+        elif has_input and has_output:
+            if isinstance(opaque, FunctionType):
+                pipe.__class__ = Functional
             else:
-                raise TypeError(f"Unable to reconcile {opaque}")
+                pipe.__class__ = Model
         else:
-            pipe.__class__ = Functional
+            raise TypeError(f"Unable to reconcile {opaque}")
 
         return pipe, outs
 
