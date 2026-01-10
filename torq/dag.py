@@ -72,144 +72,99 @@ class DAG(Runnable):
 
 def _build_dag_from_system(system: System) -> "DAG":
 
-        dag = DAG()
-        system_cnt = defaultdict(int)
+    dag = DAG()
+    system_cnt = defaultdict(int)
 
-        def walk(
-            pipe: Union[Pipeline, Pipe],
-            prev: Union[Tuple[DAGNode, ...], DAGNode, None] = None,
-            name: str = "",
-            stream_id: int = 0,
-            cnt=None,  # every pipeline gets its own counter
-        ) -> Union[DAGNode, Tuple[DAGNode, ...]]:
+    def walk(
+        pipe: Union[Pipeline, Pipe],
+        prev: Union[Tuple[DAGNode, ...], DAGNode, None] = None,
+        stream_id: int = 0,
+        name: str = "",
+        cnt=None,
+    ) -> Union[DAGNode, Tuple[DAGNode, ...]]:
 
-            if cnt is None:
-                cnt = defaultdict(int)
+        if cnt is None:
+            cnt = defaultdict(int)
 
-            cls_name = f"{pipe.__class__.__name__}"
-            base_name = name + ("." if name else "") + cls_name.lower()
+        cls_name = f"{pipe.__class__.__name__}"
+        base_name = name + ("." if name else "") + cls_name.lower()
 
-            if isinstance(pipe, Pipeline):
+        if isinstance(pipe, Pipeline):
+            cnt.clear()  # every pipeline gets its own counter
 
-                pipeline = pipe
-                pipeline_name = base_name + str(system_cnt[cls_name])
-                system_cnt[cls_name] += 1
+            pipeline = pipe
+            pipeline_name = base_name + str(system_cnt[cls_name])
+            system_cnt[cls_name] += 1
 
-                if isinstance(pipeline, Sequential):
-                    curr = prev
-                    for pipe in pipeline._pipes:
-                        curr = walk(pipe, curr, name=pipeline_name, stream_id=stream_id)
-
-                    if curr is None:
-                        raise RuntimeError(f"Invalid pipeline. {cls_name} is empty")
-
-                    return curr
-
-                elif isinstance(pipeline, Concurrent):
-                    outs = tuple()
-
-                    for pipe in pipeline._pipes:
-                        out = walk(
-                            pipe,
-                            prev,
-                            name=pipeline_name,
-                            stream_id=(
-                                stream_id
-                                if isinstance(pipe, Concurrent)
-                                else resources.get_next_streamid()
-                            ),
-                        )
-
-                        if not isinstance(out, tuple):
-                            out = (out,)
-
-                        outs += out
-
-                    if len(outs) == 0:
-                        raise RuntimeError(f"Invalid pipeline. {cls_name} is empty")
-
-                    return outs
-
-                else:
-                    raise TypeError(
-                        f"Unknown pipeline type in system: {type(pipeline)}"
+            if isinstance(pipeline, Sequential):
+                curr = prev
+                for pipe in pipeline._pipes:
+                    curr = walk(
+                        pipe, curr, stream_id=stream_id, name=pipeline_name, cnt=cnt
                     )
 
-            elif isinstance(pipe, Pipe):
-                node_name = base_name + str(cnt[cls_name])
-                cnt[cls_name] += 1
+                if curr is None:
+                    raise RuntimeError(f"Invalid pipeline. {cls_name} is empty")
 
-                args = tuple()
+                return curr
 
-                if prev:
-                    if not isinstance(prev, tuple):
-                        prev = (prev,)
+            elif isinstance(pipeline, Concurrent):
+                outs = tuple()
 
-                    args += prev
+                for pipe in pipeline._pipes:
+                    out = walk(
+                        pipe,
+                        prev,
+                        stream_id=(
+                            stream_id
+                            if isinstance(pipe, Concurrent)
+                            else resources.get_next_streamid()
+                        ),
+                        name=pipeline_name,
+                        cnt=cnt,
+                    )
 
-                node = DAGNode(node_name, stream_id, pipe, args)
-                dag.nodes += (node,)
+                    if not isinstance(out, tuple):
+                        out = (out,)
 
-                return node
+                    outs += out
+
+                if len(outs) == 0:
+                    raise RuntimeError(f"Invalid pipeline. {cls_name} is empty")
+
+                return outs
 
             else:
-                raise TypeError(f"Unknown type in system: {type(pipe)}")
+                raise TypeError(f"Unknown pipeline type in system: {type(pipeline)}")
 
-        leaves = walk(system)
+        elif isinstance(pipe, Pipe):
+            node_name = base_name + str(cnt[cls_name])
+            cnt[cls_name] += 1
 
-        if not isinstance(leaves, tuple):
-            leaves = (leaves,)  # pack single leaf
+            args = tuple()
 
-        dag.leaves = leaves
+            if prev:
+                if not isinstance(prev, tuple):
+                    prev = (prev,)
 
-        logging.info(
-            f"Graph built with {len(dag.nodes)} nodes and {len(dag.leaves)} trees"
-        )
-        return dag
+                args += prev
 
-    def __call__(self, *args):
-        cache = {}
+            node = DAGNode(node_name, stream_id, pipe, args)
+            dag.nodes += (node,)
 
-        def visit(node: DAGNode, *ins):
-            if node.node_id in cache:
-                return cache[node.node_id]
+            return node
 
-            ins = tuple(visit(arg, *ins) for arg in node.args)
+        else:
+            raise TypeError(f"Unknown type in system: {type(pipe)}")
 
-            outs = node(*ins)
-            cache[node.node_id] = outs
+    leaves = walk(system)
 
-            return outs
+    if not isinstance(leaves, tuple):
+        leaves = (leaves,)  # pack single leaf
 
-        outs = tuple(visit(leaf, *args) for leaf in self.leaves)
+    dag.leaves = leaves
+    dag.semantic_lint()  # API make cycles and orphans impossible to occur.
 
-        if len(outs) == 1:
-            outs = outs[0]
+    logging.info(f"Graph built with {len(dag.nodes)} nodes and {len(dag.leaves)} trees")
 
-        return outs
-
-    def __iter__(self):
-        visited = set()
-
-        def visit(node: DAGNode):
-            if node in visited:
-                return
-
-            # visit up the tree through the args
-            for arg in node.args:
-                yield from visit(arg)
-
-            yield node
-            visited.add(node)
-
-        for leaf in self.leaves:
-            yield from visit(leaf)
-
-    def __repr__(self) -> str:
-        line = "=" * 80
-        return f"\n".join(
-            [
-                f"Tree {i}:\n{line}\n{repr(leaf)}\n{line}"
-                for i, leaf in enumerate(self.leaves)
-            ]
-        )
+    return dag
