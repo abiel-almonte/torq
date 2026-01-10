@@ -7,9 +7,28 @@ from .pipeline import System, Pipeline, Sequential, Concurrent
 from .utils import logging
 
 
+class StreamRoundRobin:
+    def __init__(self, n_streams) -> None:
+        self.n_streams = n_streams
+        self._streams = [x for x in range(n_streams)]
+        self._idx = 0
+
+    def __next__(self) -> int:
+        stream = self._streams[self._idx]
+        self._idx = (self._idx + 1) % self.n_streams
+        return stream
+
+
+stream_roundrobin = StreamRoundRobin(10)
+get_next_streamid = lambda: next(stream_roundrobin)
+
+
 class DAGNode:
-    def __init__(self, node_id: str, pipe: Pipe, args: Tuple["DAGNode", ...]):
+    def __init__(
+        self, node_id: str, stream_id: int, pipe: Pipe, args: Tuple["DAGNode", ...]
+    ):
         self.node_id = node_id
+        self.stream_id = stream_id
         self.pipe = pipe
         self.args = args
 
@@ -20,13 +39,15 @@ class DAGNode:
         return hash(self.node_id)
 
     def __repr__(self) -> str:
-        def _repr(node, level=0):
+        def _repr(node: DAGNode, level=0):
             space = "\t"
             indent = space * level
 
             s = f"{indent}DAGNode(\n"
             s += f"{indent}{space}node_id={node.node_id},\n"
-            s += f"{indent}{space}stage={node.pipe.__class__.__name__},\n"
+            s += f"{indent}{space}stream={node.stream_id},\n"
+            s += f"{indent}{space}pipe={node.pipe.__class__.__name__},\n"
+
             if node.args:
                 s += f"{indent}{space}args=(\n"
                 for arg in node.args:
@@ -34,6 +55,7 @@ class DAGNode:
                 s += f"{indent}{space})\n"
             else:
                 s += f"{indent}{space}args=()\n"
+
             s += f"{indent})"
             return s
 
@@ -55,8 +77,12 @@ class DAG(Runnable):
             pipe: Union[Pipeline, Pipe],
             prev: Union[Tuple[DAGNode, ...], DAGNode, None] = None,
             name: str = "",
-            cnt=defaultdict(int),  # every pipeline gets its own counter
+            stream_id: int = 0,
+            cnt=None,  # every pipeline gets its own counter
         ) -> Union[DAGNode, Tuple[DAGNode, ...]]:
+
+            if cnt is None:
+                cnt = defaultdict(int)
 
             cls_name = f"{pipe.__class__.__name__}"
             base_name = name + ("." if name else "") + cls_name.lower()
@@ -70,7 +96,7 @@ class DAG(Runnable):
                 if isinstance(pipeline, Sequential):
                     curr = prev
                     for pipe in pipeline._pipes:
-                        curr = walk(pipe, curr, name=pipeline_name)
+                        curr = walk(pipe, curr, name=pipeline_name, stream_id=stream_id)
 
                     if curr is None:
                         raise RuntimeError(f"Invalid pipeline. {cls_name} is empty")
@@ -79,18 +105,23 @@ class DAG(Runnable):
 
                 elif isinstance(pipeline, Concurrent):
                     outs = tuple()
-                    for pipe in pipeline._pipes:
-                        out = walk(pipe, prev, name=pipeline_name)
 
-                        if isinstance(
-                            out, tuple
-                        ):  # flatten concurrent in concurrent ...
-                            outs += out
-                            logging.warning(
-                                "Detected consecutive Concurrents. Can be flattened for convience"
-                            )
-                        else:
-                            outs += (out,)
+                    for pipe in pipeline._pipes:
+                        out = walk(
+                            pipe,
+                            prev,
+                            name=pipeline_name,
+                            stream_id=(
+                                stream_id
+                                if isinstance(pipe, Concurrent)
+                                else get_next_streamid()
+                            ),
+                        )
+
+                        if not isinstance(out, tuple):
+                            out = (out,)
+
+                        outs += out
 
                     if len(outs) == 0:
                         raise RuntimeError(f"Invalid pipeline. {cls_name} is empty")
