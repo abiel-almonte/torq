@@ -140,12 +140,12 @@ class DAG(Runnable):
                 args = tuple()
 
                 if prev:
-                    if isinstance(prev, tuple):
-                        args += prev
-                    else:
-                        args += (prev,)
+                    if not isinstance(prev, tuple):
+                        prev = (prev,)
 
-                node = DAGNode(node_name, pipe, args)
+                    args += prev
+
+                node = DAGNode(node_name, stream_id, pipe, args)
                 dag.nodes += (node,)
 
                 return node
@@ -155,10 +155,10 @@ class DAG(Runnable):
 
         leaves = walk(system)
 
-        if isinstance(leaves, tuple):
-            dag.leaves += leaves
-        else:
-            dag.leaves += (leaves,)  # pack single leaf
+        if not isinstance(leaves, tuple):
+            leaves = (leaves,)  # pack single leaf
+
+        dag.leaves = leaves
 
         logging.info(
             f"Graph built with {len(dag.nodes)} nodes and {len(dag.leaves)} trees"
@@ -173,8 +173,7 @@ class DAG(Runnable):
             if node.node_id in cache:
                 return cache[node.node_id]
 
-            if node.args:
-                ins = tuple(visit(arg, *ins) for arg in node.args)
+            ins = tuple(visit(arg, *ins) for arg in node.args)
 
             outs = node(*ins)
             cache[node.node_id] = outs
