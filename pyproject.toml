@@ -9,6 +9,8 @@ dependencies = []
 [project.optional-dependencies]
 vision = ["opencv-python", "torch"]
 visionrt-linux = ["visionrt @ git+https://github.com/abiel-almonte/visionrt.git"]
+cupy-cu12 = ["cupy-cuda12x"]
+cupy-cu13 = ["cupy-cuda13x"]
 
 [dependency-groups]
 dev = [
