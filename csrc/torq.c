@@ -52,7 +52,54 @@ static PyObject* stream_sync(PyObject* self, PyObject* args){
     Py_RETURN_NONE;
 }
 
+static PyObject* capture_begin(PyObject* self, PyObject* args) {
+    PyObject* capsule;
+    if (!PyArg_ParseTuple(args, "O", &capsule)) {
+        return NULL;
+    }
+
+    cudaStream_t* stream = (cudaStream_t*)PyCapsule_GetPointer(capsule, "cudaStream_t");
+    if (!stream){
+        return NULL;
+    }
+
+    _CUDA_CHECK(cudaStreamBeginCapture(*stream, cudaStreamCaptureModeGlobal), "Failed to begin graph capture");
+    Py_RETURN_NONE;
+}
+
+static void graph_destroy(PyObject* capsule) {
+    cudaGraph_t* graph = (cudaGraph_t*)PyCapsule_GetPointer(capsule, "cudaGraph_t");
+
+    if (graph) {
+        cudaGraphDestroy(*graph);
+        free(graph);
+    }
+}
+
+static PyObject* capture_end(PyObject* self, PyObject* args) {
+    PyObject* capsule;
+    if (!PyArg_ParseTuple(args, "O", &capsule)) {
+        return NULL;
+    }
+
+    cudaStream_t* stream = (cudaStream_t*)PyCapsule_GetPointer(capsule, "cudaStream_t");
+    if (!stream){
+        return NULL;
+    }
+
+    cudaGraph_t* graph = (cudaGraph_t*)malloc(sizeof(cudaGraph_t));
+    if (!graph){
+        PyErr_SetString(PyExc_MemoryError,"Failed to allocate CUDA graph");
+        return NULL;
+    }
+
+    _CUDA_CHECK(cudaStreamEndCapture(*stream, graph), "Failed to end graph capture");
+    return PyCapsule_New(graph, "cudaGraph_t", graph_destroy);
+}
+
 static PyMethodDef _torq_methods [] = {
+    {"capture_begin", &capture_begin, METH_VARARGS, "Begin CUDA Graph capture"},
+    {"capture_end", &capture_end, METH_VARARGS, "End CUDA Graph capture"},
     {"stream_create", &stream_create, METH_NOARGS, "Create CUDA Stream"},
     {"stream_sync", &stream_sync, METH_VARARGS, "Synchronize CUDA Stream"},
     {"device_sync", &device_sync, METH_NOARGS, "Synchronize CUDA GPU"},
@@ -77,10 +124,6 @@ PyMODINIT_FUNC PyInit__torq(void){
 }
 
 /* TODO:
-capture_begin(stream)
-capture_end(stream, graph)
-
-graph_instantiate(executor, graph)
-graph_launch(executor, stream)
-graph_destroy(executor, graph)
+instantiate_executor(graph)
+execute_graph(executor, stream)
 */

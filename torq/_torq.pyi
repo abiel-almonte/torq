@@ -6,6 +6,9 @@ from types import CapsuleType
 cudaStream_t = NewType("cudaStream_t", CapsuleType) 
 """CUDA Stream Handle"""
 
+cudaGraph_t  = NewType("cudaGraph_t", CapsuleType)
+"""CUDA Graph Handle"""
+
 def device_sync() -> None: 
     """Synchronize CUDA GPU"""
     ...
@@ -16,4 +19,12 @@ def stream_create() -> cudaStream_t:
 
 def stream_sync(stream: cudaStream_t) -> None:
     """Synchronize CUDA Stream"""
+    ...
+
+def capture_begin(stream: cudaStream_t) -> None:
+    """Begin CUDA Graph capture on the given stream"""
+    ...
+
+def capture_end(stream: cudaStream_t) -> cudaGraph_t:
+    """End CUDA Graph capture on the given stream"""
     ...
