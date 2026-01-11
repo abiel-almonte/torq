@@ -3,14 +3,18 @@ name = "torq"
 version = "0.1.0"
 description = "Deterministic pipeline composition and compilation"
 readme = "README.md"
-requires-python = ">=3.11,<3.12"
+requires-python = "==3.13.*"
 dependencies = []
 
 [project.optional-dependencies]
 vision = ["opencv-python", "torch"]
-visionrt-linux = ["visionrt @ git+https://github.com/Abiel-Almonte/visionrt.git"]
+visionrt-linux = ["visionrt @ git+https://github.com/abiel-almonte/visionrt.git"]
 
 [dependency-groups]
 dev = [
     "black",
 ]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
