@@ -16,7 +16,45 @@ static PyObject* device_sync(PyObject* self, PyObject *args){
     Py_RETURN_NONE;
 }
 
+static void stream_destroy(PyObject *capsule){ 
+    cudaStream_t* stream = (cudaStream_t*)PyCapsule_GetPointer(capsule, "cudaStream_t");
+
+    if (stream) { 
+        cudaStreamDestroy(*stream);
+        free(stream);
+    }
+}
+
+static PyObject* stream_create(PyObject* self, PyObject *args){ 
+    cudaStream_t* stream = (cudaStream_t*)malloc(sizeof(cudaStream_t));
+
+    if (!stream) { 
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate CUDA stream");
+        return NULL;
+    }
+
+    _CUDA_CHECK(cudaStreamCreate(stream), "Failed to create CUDA stream");
+    return PyCapsule_New(stream, "cudaStream_t", stream_destroy);
+}
+
+static PyObject* stream_sync(PyObject* self, PyObject* args){
+    PyObject* capsule;
+    if (!PyArg_ParseTuple(args, "O", &capsule)){
+        return NULL;
+    }
+
+    cudaStream_t* stream = (cudaStream_t*)PyCapsule_GetPointer(capsule, "cudaStream_t"); 
+    if (!stream){
+        return NULL;
+    }
+
+    _CUDA_CHECK(cudaStreamSynchronize(*stream), "Failed to synchronize CUDA stream");
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef _torq_methods [] = {
+    {"stream_create", &stream_create, METH_NOARGS, "Create CUDA Stream"},
+    {"stream_sync", &stream_sync, METH_VARARGS, "Synchronize CUDA Stream"},
     {"device_sync", &device_sync, METH_NOARGS, "Synchronize CUDA GPU"},
     {NULL, NULL, 0, NULL}
 };
@@ -39,10 +77,6 @@ PyMODINIT_FUNC PyInit__torq(void){
 }
 
 /* TODO:
-stream_create()
-stream_destroy(stream)  
-stream_sync(stream)
-
 capture_begin(stream)
 capture_end(stream, graph)
 
