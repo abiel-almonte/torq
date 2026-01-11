@@ -6,7 +6,7 @@
 #define _CUDA_CHECK(expr, message) { \
     cudaError_t _err = expr; \
     if (_err != cudaSuccess) { \
-        PyErr_SetString(PyExc_RuntimeError, message); \
+        PyErr_SetString(PyExc_RuntimeError, (message)); \
         return NULL; \
     } \
 } \
