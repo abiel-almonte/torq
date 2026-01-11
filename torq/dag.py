@@ -1,22 +1,22 @@
-from typing import Tuple, Union
-from collections import defaultdict
+from typing import Tuple
 
 from .runnable import Runnable
-from .pipes import Pipe, Input, Output
-from .pipeline import System, Pipeline, Sequential, Concurrent
+from .pipes import Input, Output
+from .pipeline import System
 from .nodes import DAGNode
 
-from .utils import resources, logging
-
+from .builder import _build_dag_from_system
 
 class DAG(Runnable):
-    def __init__(self) -> None:
-        self.nodes: Tuple[DAGNode, ...] = tuple()
-        self.leaves: Tuple[DAGNode, ...] = tuple()
+    def __init__(self, nodes: Tuple[DAGNode, ...], leaves: Tuple[DAGNode, ...]) -> None:
+        self.nodes = nodes
+        self.leaves = leaves
 
     @staticmethod
     def from_system(system: System) -> "DAG":
-        return _build_dag_from_system(system)
+        dag = DAG(*_build_dag_from_system(system))
+        dag.semantic_lint() # API make cycles and orphans impossible to occur.
+        return dag
 
     def semantic_lint(self):
         for node in self:
@@ -68,103 +68,3 @@ class DAG(Runnable):
                 for i, leaf in enumerate(self.leaves)
             ]
         )
-
-
-def _build_dag_from_system(system: System) -> "DAG":
-
-    dag = DAG()
-    system_cnt = defaultdict(int)
-
-    def walk(
-        pipe: Union[Pipeline, Pipe],
-        prev: Union[Tuple[DAGNode, ...], DAGNode, None] = None,
-        stream_id: int = 0,
-        name: str = "",
-        cnt=None,
-    ) -> Union[DAGNode, Tuple[DAGNode, ...]]:
-
-        if cnt is None:
-            cnt = defaultdict(int)
-
-        cls_name = f"{pipe.__class__.__name__}"
-        base_name = name + ("." if name else "") + cls_name.lower()
-
-        if isinstance(pipe, Pipeline):
-            cnt.clear()  # every pipeline gets its own counter
-
-            pipeline = pipe
-            pipeline_name = base_name + str(system_cnt[cls_name])
-            system_cnt[cls_name] += 1
-
-            if isinstance(pipeline, Sequential):
-                curr = prev
-                for pipe in pipeline._pipes:
-                    curr = walk(
-                        pipe, curr, stream_id=stream_id, name=pipeline_name, cnt=cnt
-                    )
-
-                if curr is None:
-                    raise RuntimeError(f"Invalid pipeline. {cls_name} is empty")
-
-                return curr
-
-            elif isinstance(pipeline, Concurrent):
-                outs = tuple()
-
-                for pipe in pipeline._pipes:
-                    out = walk(
-                        pipe,
-                        prev,
-                        stream_id=(
-                            stream_id
-                            if isinstance(pipe, Concurrent)
-                            else resources.get_next_streamid()
-                        ),
-                        name=pipeline_name,
-                        cnt=cnt,
-                    )
-
-                    if not isinstance(out, tuple):
-                        out = (out,)
-
-                    outs += out
-
-                if len(outs) == 0:
-                    raise RuntimeError(f"Invalid pipeline. {cls_name} is empty")
-
-                return outs
-
-            else:
-                raise TypeError(f"Unknown pipeline type in system: {type(pipeline)}")
-
-        elif isinstance(pipe, Pipe):
-            node_name = base_name + str(cnt[cls_name])
-            cnt[cls_name] += 1
-
-            args = tuple()
-
-            if prev:
-                if not isinstance(prev, tuple):
-                    prev = (prev,)
-
-                args += prev
-
-            node = DAGNode(node_name, stream_id, pipe, args)
-            dag.nodes += (node,)
-
-            return node
-
-        else:
-            raise TypeError(f"Unknown type in system: {type(pipe)}")
-
-    leaves = walk(system)
-
-    if not isinstance(leaves, tuple):
-        leaves = (leaves,)  # pack single leaf
-
-    dag.leaves = leaves
-    dag.semantic_lint()  # API make cycles and orphans impossible to occur.
-
-    logging.info(f"Graph built with {len(dag.nodes)} nodes and {len(dag.leaves)} trees")
-
-    return dag
