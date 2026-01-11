@@ -112,6 +112,22 @@ static PyObject* capture_end(PyObject* self, PyObject* args) {
     return PyCapsule_New(graph, "cudaGraph_t", graph_destroy);
 }
 
+static PyObject* get_graph_ptr(PyObject* self, PyObject *args){
+    PyObject* capsule;
+    
+    if (!PyArg_ParseTuple(args, "O", &capsule)){
+        return NULL;
+    }
+    
+    cudaGraph_t* graph = (cudaGraph_t*)PyCapsule_GetPointer(capsule, "cudaGraph_t");
+    if (!graph){
+        return NULL;
+    }
+
+    return PyLong_FromVoidPtr((void*)(*graph));
+}
+
+
 static PyMethodDef _torq_methods [] = {
     {"capture_begin", &capture_begin, METH_VARARGS, "Begin CUDA Graph capture"},
     {"capture_end", &capture_end, METH_VARARGS, "End CUDA Graph capture"},
