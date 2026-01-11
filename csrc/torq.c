@@ -126,6 +126,35 @@ static PyObject* get_graph_ptr(PyObject* self, PyObject *args){
 
     return PyLong_FromVoidPtr((void*)(*graph));
 }
+
+static void executor_destroy(PyObject* capsule){
+    cudaGraphExec_t* executor = (cudaGraphExec_t*)PyCapsule_GetPointer(capsule, "cudaGraphExec_t");
+
+    if (executor) {
+        cudaGraphExecDestroy(*executor);
+        free(executor);
+    }
+}
+
+static PyObject* executor_create(PyObject* self, PyObject *args){
+    PyObject* capsule;
+    
+    if (!PyArg_ParseTuple(args, "O", &capsule)) {
+        return NULL;
+    }
+
+    cudaGraph_t* graph = (cudaGraph_t*)PyCapsule_GetPointer(capsule, "cudaGraph_t");
+    if (!graph){
+        return NULL;
+    }
+
+    cudaGraphExec_t* executor = (cudaGraphExec_t*)malloc(sizeof(cudaGraphExec_t));
+
+    _CUDA_CHECK(cudaGraphInstantiate(executor, *graph, NULL), "Failed to instantiate executor");
+
+    return PyCapsule_New(executor, "cudaGraphExec_t", executor_destroy);
+}
+
 static PyObject* get_executor_ptr(PyObject* self, PyObject *args){
     PyObject* capsule;
     
