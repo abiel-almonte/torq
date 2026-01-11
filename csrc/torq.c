@@ -194,11 +194,21 @@ static PyObject* graph_launch(PyObject* self, PyObject *args){
 
 
 static PyMethodDef _torq_methods [] = {
-    {"capture_begin", &capture_begin, METH_VARARGS, "Begin CUDA Graph capture"},
-    {"capture_end", &capture_end, METH_VARARGS, "End CUDA Graph capture"},
-    {"stream_create", &stream_create, METH_NOARGS, "Create CUDA Stream"},
-    {"stream_sync", &stream_sync, METH_VARARGS, "Synchronize CUDA Stream"},
-    {"device_sync", &device_sync, METH_NOARGS, "Synchronize CUDA GPU"},
+    {"launch_graph", &graph_launch, METH_VARARGS, "Launch CUDA Graph"},
+
+    {"create_executor", &executor_create, METH_VARARGS, "Create CUDA GraphExec"},
+    {"get_executor_ptr", &get_executor_ptr, METH_VARARGS, "Get CUDA GraphExec pointer"},
+
+    {"begin_capture", &capture_begin, METH_VARARGS, "Begin CUDA Graph capture"},
+    {"end_capture", &capture_end, METH_VARARGS, "End CUDA Graph capture"},
+    {"get_graph_ptr", &get_graph_ptr, METH_VARARGS, "Get CUDA Graph pointer"},
+
+    {"create_stream", &stream_create, METH_NOARGS, "Create CUDA Stream"},
+    {"get_stream_ptr", &get_stream_ptr, METH_VARARGS, "Get CUDA Stream pointer"},
+    {"sync_stream", &stream_sync, METH_VARARGS, "Synchronize CUDA Stream"},
+    
+    {"sync_device", &device_sync, METH_NOARGS, "Synchronize CUDA GPU"},
+
     {NULL, NULL, 0, NULL}
 };
 
@@ -218,8 +228,3 @@ static struct PyModuleDef _torq_module = {
 PyMODINIT_FUNC PyInit__torq(void){
     return PyModule_Create(&_torq_module);
 }
-
-/* TODO:
-instantiate_executor(graph)
-execute_graph(executor, stream)
-*/
