@@ -126,6 +126,21 @@ static PyObject* get_graph_ptr(PyObject* self, PyObject *args){
 
     return PyLong_FromVoidPtr((void*)(*graph));
 }
+static PyObject* get_executor_ptr(PyObject* self, PyObject *args){
+    PyObject* capsule;
+    
+    if (!PyArg_ParseTuple(args, "O", &capsule)) {
+        return NULL;
+    }
+    
+    cudaGraphExec_t* exec = (cudaGraphExec_t*)PyCapsule_GetPointer(capsule, "cudaGraphExec_t");
+    if (!exec) {
+        return NULL;
+    }
+
+    return PyLong_FromVoidPtr((void*)(*exec));
+}
+
 
 
 static PyMethodDef _torq_methods [] = {
