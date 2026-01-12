@@ -30,14 +30,6 @@ class CUDAStream(Handler):
         _torq.sync_stream(self._handler)
 
 
-class CUDAGraphExec(Handler):
-    _name = "executor"
-
-    def __init__(self, graph) -> None:
-        executor: cudaGraph_t = _torq.create_executor(graph)
-        super().__init__(executor)
-
-
 class CUDAGraph(Handler):
     _name = "graph"
 
@@ -50,5 +42,13 @@ class CUDAGraph(Handler):
     def end_capture(self, stream: CUDAStream) -> None:
         self._handler: cudaGraph_t = _torq.end_capture(stream._handler)
 
-    def launch(self, exec: CUDAGraphExec, stream: CUDAStream) -> None:
+    def launch(self, exec: "CUDAGraphExec", stream: CUDAStream) -> None:
         _torq.launch_graph(exec._handler, stream._handler)
+
+
+class CUDAGraphExec(Handler):
+    _name = "executor"
+
+    def __init__(self, graph: CUDAGraph) -> None:
+        executor: cudaGraph_t = _torq.create_executor(graph._handler)
+        super().__init__(executor)
