@@ -35,7 +35,7 @@ from torq import config
 
 config.verbose = True
 
-tq.register(cls=Camera, adapter=lambda x: next(x.stream()))
+tq.register_pipe(cls=Camera, adapter=lambda x: next(x.stream()))
 
 system = tq.Sequential(
     tq.Concurrent(

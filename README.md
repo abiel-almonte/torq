@@ -23,7 +23,7 @@ Teach torq how to call your own objects:
 ```python
 from visionrt import Camera
 
-tq.register(cls=Camera, adapter=lambda x: next(x.stream()))
+tq.register_pipe(cls=Camera, adapter=lambda x: next(x.stream()))
 
 system = tq.Sequential(
     Camera("/dev/video0"),
