@@ -1,10 +1,8 @@
 from typing import Optional, Union, Tuple
 from collections import defaultdict
 
-from ..pipes import Pipe
-from ..pipeline import System, Pipeline, Sequential, Concurrent
-
 from .. import config
+from ..core import System, Pipeline, Sequential, Concurrent, Pipe
 from ..utils import logging
 
 from .nodes import DAGNode

@@ -1,7 +1,6 @@
 from typing import Any, Union
 
-from ..runnable import Runnable
-from ..pipeline import System
+from ..core import Runnable, System
 
 from . import registry
 from .dag import DAG

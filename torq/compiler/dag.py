@@ -1,11 +1,10 @@
 from typing import Tuple
 
-from ..runnable import Runnable
-from ..pipes import Input, Output
-from ..pipeline import System
+from ..core import Runnable, Input, Output, System
 
 from .nodes import DAGNode
 from .frontend import lower
+
 
 class DAG(Runnable):
     def __init__(self, nodes: Tuple[DAGNode, ...], leaves: Tuple[DAGNode, ...]) -> None:
