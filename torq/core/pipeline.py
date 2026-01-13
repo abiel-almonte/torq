@@ -1,4 +1,5 @@
-from typing import Any, TypeAlias
+from contextlib import contextmanager
+from typing import Any, TypeAlias, Callable, List
 from abc import ABC, abstractmethod
 
 from .runnable import Runnable
@@ -6,7 +7,7 @@ from .pipes import Pipe
 
 
 class Opaque:
-    def __init__(self, inner, is_pipeline, callback):
+    def __init__(self, inner: Any, is_pipeline: bool, callback: Callable):
         self._inner = inner
         self.is_pipeline = is_pipeline
         self.materialization_callback = callback
@@ -26,6 +27,8 @@ class Opaque:
 
 
 class Pipeline(ABC, Runnable):
+    _fn_wrappers: List[Callable] = [lambda fn, *args: fn(*args)] # preload identity wrapper
+
     def __init__(self, *args: Any) -> None:  # stages
         self._opaques = tuple()
         self._pipes = tuple()  # will be filled out lazily
@@ -51,6 +54,15 @@ class Pipeline(ABC, Runnable):
     def __iter__(self):
         for x in self.container:
             yield x
+
+    @classmethod
+    @contextmanager
+    def register_hook(cls, hook: Callable):
+        cls._fn_wrappers.append(hook)
+        try:
+            yield
+        finally:
+            cls._fn_wrappers.pop()
 
     @abstractmethod
     def _call_impl(self, *args: Any) -> Any: ...
@@ -88,7 +100,7 @@ class Sequential(Pipeline):
 
         x = args
         for fn in self:
-            x = fn(*x)
+            x = self._fn_wrappers[-1](fn, *x)
 
             if not isinstance(x, tuple):
                 x = (x,)
@@ -102,7 +114,7 @@ class Concurrent(Pipeline):
 
         outs = tuple()
         for fn in self:
-            out = fn(*args)
+            out = self._fn_wrappers[-1](fn, *args)
 
             if not isinstance(out, tuple):
                 out = (out,)
