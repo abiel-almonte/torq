@@ -38,7 +38,7 @@ class DAG(Runnable):
         args_iter = iter(args)
 
         for node in self:
-            if not node.args:
+            if not node.args and args:
                 cache[node] = node(*next(args_iter))
             else:
                 ins = tuple(cache[arg] for arg in node.args)
