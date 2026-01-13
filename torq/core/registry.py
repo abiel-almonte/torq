@@ -1,11 +1,12 @@
 from typing import Type, Callable, Any, Tuple
 from types import FunctionType
 
-from .utils import logging
+from ..utils import logging
 
 _pipe_registry: Tuple[Tuple[Type, Callable[..., Any]], ...] = (
     (FunctionType, lambda f: f),  # general function, same as lambda type
 )
+
 
 def register_pipe(cls: Type, adapter: Callable[..., Any]) -> None:
     if not callable(adapter):
@@ -21,6 +22,7 @@ def register_pipe_decorator(adapter: Callable[..., Any]) -> Callable:
         return cls
 
     return decorator
+
 
 try:
     import cv2  # opencv preloaded
@@ -50,4 +52,3 @@ def get_adapter(obj: object) -> Callable[..., Any]:
         f"Unable to retrieve adapter for object of type {type(obj)}. Assuming object is callable."
     )
     return lambda x: x
-
