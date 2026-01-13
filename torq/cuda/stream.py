@@ -2,9 +2,9 @@ from typing import Optional
 
 from ..utils import logging
 
+from . import registry
 from .handlers import CUDAStream
 from .launcher import GraphLauncher
-from .registry import _stream_ctx_registry
 
 
 class Stream:
@@ -18,7 +18,7 @@ class Stream:
     def capture(self, framework: Optional[str] = "pytorch") -> Optional[GraphLauncher]:
         if framework is None:  # exhaustive search
 
-            for ctx_factory in _stream_ctx_registry.values():
+            for ctx_factory in registry._stream_ctx_registry.values():
                 try:
                     ctx = ctx_factory(self._stream.ptr)
                     return GraphLauncher(self._stream, ctx)
@@ -29,14 +29,14 @@ class Stream:
             return GraphLauncher(self._stream, None)
 
         else:
-            if framework not in _stream_ctx_registry:
+            if framework not in registry._stream_ctx_registry:
                 raise ValueError(
                     f"Framework {framework} not registered",
-                    f"Available frameworks {list(_stream_ctx_registry.keys())}",
+                    f"Available frameworks {list(registry._stream_ctx_registry.keys())}",
                     "Register your framework using `tq.cuda.register`",
                 )
 
-            ctx_factory = _stream_ctx_registry[framework]
+            ctx_factory = registry._stream_ctx_registry[framework]
             ctx = ctx_factory(self._stream.ptr)
             return GraphLauncher(self._stream, ctx)
 
