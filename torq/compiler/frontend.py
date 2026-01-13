@@ -65,6 +65,20 @@ class _TraversalContext:
     branch: _BranchCounter
     nodes: List[DAGNode]
 
+    def new_name(self, pipeline: Pipeline):
+        return replace(self, name=self.name.enter_pipeline(pipeline))
+    
+    def get_name(self, pipe: Pipe):
+        return self.name.get_name(pipe)
+
+    def new_branch(self):
+        return replace(self, branch=self.branch.get_next())
+
+    def get_branch(self):
+        return self.branch.get_branch()
+
+    def push_node(self, node: DAGNode):
+        self.nodes.append(node)
 
 def build_graph(system: System):
     ctx = _TraversalContext(
@@ -96,7 +110,7 @@ def _parse_system(
 
     if isinstance(pipe, Pipeline):
         pipeline = pipe
-        ctx = replace(ctx, name=ctx.name.enter_pipeline(pipeline))
+        ctx = ctx.new_name(pipeline)
 
         if isinstance(pipeline, Sequential):
             curr = prev
@@ -115,7 +129,7 @@ def _parse_system(
                 branch_ctx = (
                     ctx
                     if isinstance(pipe, Concurrent)
-                    else replace(ctx, branch=ctx.branch.get_next())
+                    else ctx.new_branch()
                 )
 
                 out = _parse_system(pipe, prev=prev, ctx=branch_ctx)
@@ -141,11 +155,11 @@ def _lower_pipe(
 ) -> DAGNode:  # TODO lower to GPU Nodes
 
     node = DAGNode(
-        node_id=ctx.name.get_name(pipe),
-        branch=ctx.branch.get_branch(),
+        node_id=ctx.get_name(pipe),
+        branch=ctx.get_branch(),
         pipe=pipe,
         args=_as_tuple(prev) if prev else (),
     )
 
-    ctx.nodes.append(node)
+    ctx.push_node(node)
     return node
