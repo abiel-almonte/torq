@@ -11,7 +11,7 @@ NodeOrNodes = Union[DAGNode, Nodes]
 
 
 class _BranchCounter:
-    __slots__ = ('_local', '_global')
+    __slots__ = ("_local", "_global")
 
     def __init__(self, branch: int) -> None:
         self._local = branch
@@ -27,7 +27,7 @@ class _BranchCounter:
 
 
 class _NameBuilder:
-    __slots__ = ('stack', '_global', '_local')
+    __slots__ = ("stack", "_global", "_local")
 
     def __init__(
         self,
@@ -67,7 +67,7 @@ class _TraversalContext:
 
     def new_name(self, pipeline: Pipeline):
         return replace(self, name=self.name.enter_pipeline(pipeline))
-    
+
     def get_name(self, pipe: Pipe):
         return self.name.get_name(pipe)
 
@@ -79,6 +79,7 @@ class _TraversalContext:
 
     def push_node(self, node: DAGNode):
         self.nodes.append(node)
+
 
 def build_graph(system: System):
     ctx = _TraversalContext(
@@ -114,7 +115,7 @@ def _parse_system(
 
         if isinstance(pipeline, Sequential):
             curr = prev
-            for pipe in pipeline:
+            for pipe in pipeline: # shadow pipe
                 curr = _parse_system(pipe, prev=curr, ctx=ctx)
 
             if curr is prev:
@@ -125,7 +126,7 @@ def _parse_system(
         elif isinstance(pipeline, Concurrent):
             outs = tuple()
 
-            for pipe in pipeline: # shadow pipe
+            for pipe in pipeline:
                 branch_ctx = (
                     ctx
                     if isinstance(pipe, Concurrent)
