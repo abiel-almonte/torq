@@ -94,7 +94,6 @@ h264parser = Gst.ElementFactory.make("h264parse", "h264-parser")
 decoder = Gst.ElementFactory.make("nvv4l2decoder", "nvv4l2-decoder")
 ...
 ```
-```
 manual pipeline management,
 ```python
 pipeline.add(source)
