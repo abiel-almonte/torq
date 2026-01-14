@@ -4,6 +4,7 @@ from dataclasses import dataclass, replace
 
 from ..core import System, Pipeline, Sequential, Concurrent, Pipe
 from ..utils import logging
+
 from .nodes import DAGNode
 from .types import Node, Nodes, NodeOrNodes
 

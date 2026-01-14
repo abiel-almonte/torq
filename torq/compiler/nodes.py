@@ -1,12 +1,10 @@
-from typing import Tuple
-
 from ..core import Runnable, Pipe
-from .types import Node
+from .types import Node, Nodes
 
 
 class DAGNode(Node, Runnable):
     def __init__(
-        self, node_id: str, branch: int, pipe: Pipe, args: Tuple["DAGNode", ...]
+        self, node_id: str, branch: int, pipe: Pipe, args: Nodes
     ):
         self.id = node_id
         self.branch = branch
@@ -27,7 +25,7 @@ class DAGNode(Node, Runnable):
             space = "\t"
             indent = space * level
 
-            s = f"{indent}DAGNode(\n"
+            s = f"{indent}{self.__class__.__name__}(\n"
             s += f"{indent}{space}id={node.id},\n"
             s += f"{indent}{space}branch={node.branch},\n"
             s += f"{indent}{space}pipe={node.pipe.__class__.__name__},\n"
