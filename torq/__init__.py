@@ -1,5 +1,5 @@
 from .core import Pipe, Sequential, Concurrent, register_pipe, register_pipe_decorator
-from .compiler import register_backend, compile
+from .compiler import register_backend, compile, _fulqrum
 
 HAS_CUDA = False
 
