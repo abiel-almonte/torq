@@ -13,8 +13,8 @@ class DAG(Runnable):
         self.leaves = leaves
 
     @staticmethod
-    def from_system(system: System) -> "DAG":
-        dag = DAG(*build_graph(system))
+    def from_system(system: System, *args) -> "DAG":
+        dag = DAG(*build_graph(system, *args))
         dag.semantic_lint()  # API make cycles and orphans impossible to occur.
         return dag
 

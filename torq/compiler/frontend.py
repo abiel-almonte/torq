@@ -1,4 +1,4 @@
-from typing import Union, Tuple, List
+from typing import Union, Tuple, List, Any
 from collections import defaultdict
 from dataclasses import dataclass, replace
 
@@ -6,6 +6,7 @@ from ..core import System, Pipeline, Sequential, Concurrent, Pipe
 from ..utils import logging
 from .nodes import DAGNode
 from .types import Node, Nodes, NodeOrNodes
+
 
 class _BranchCounter:
     __slots__ = ("_local", "_global")
@@ -78,14 +79,14 @@ class _TraversalContext:
         self.nodes.append(node)
 
 
-def build_graph(system: System) -> Tuple[Nodes, Nodes]:
+def lazy_build_graph(system: System, *args) -> Tuple[Nodes, Nodes, Any]:
     ctx = _TraversalContext(
         name=_NameBuilder(tuple(), defaultdict(int)),
         branch=_BranchCounter(0),
         nodes=[],
     )
 
-    leaves = _parse_system(system, prev=None, ctx=ctx)
+    leaves, _ = _lower_system(system, prev=None, prev_outs=args, ctx=ctx)
     leaves = _as_tuple(leaves)
 
     logging.info(f"Graph built with {len(ctx.nodes)} nodes and {len(leaves)} trees")
@@ -100,64 +101,69 @@ def _as_tuple(x) -> tuple:
     return x
 
 
-def _parse_system(
+def _lower_system(
     pipe: Union[Pipeline, Pipe],
     prev: NodeOrNodes,
+    prev_outs: Any,
     ctx: _TraversalContext,
-) -> NodeOrNodes:
+) -> Tuple[NodeOrNodes, Any]:
 
     if isinstance(pipe, Pipeline):
         pipeline = pipe
         ctx = ctx.new_name(pipeline)
 
         if isinstance(pipeline, Sequential):
-            curr = prev
-            for pipe in pipeline: # shadow pipe
-                curr = _parse_system(pipe, prev=curr, ctx=ctx)
+            curr, curr_outs = prev, prev_outs
+            for pipe in pipeline:  # shadow pipe
+                curr, curr_outs = _lower_system(
+                    pipe, prev=curr, prev_outs=curr_outs, ctx=ctx
+                )
 
             if curr is prev:
                 raise RuntimeError("Sequential pipeline is empty")
 
-            return curr
+            return curr, _as_tuple(curr_outs)
 
         elif isinstance(pipeline, Concurrent):
+            out_nodes = tuple()
             outs = tuple()
 
             for pipe in pipeline:
-                branch_ctx = (
-                    ctx
-                    if isinstance(pipe, Concurrent)
-                    else ctx.new_branch()
+                branch_ctx = ctx if isinstance(pipe, Concurrent) else ctx.new_branch()
+
+                out_node, out = _lower_system(
+                    pipe, prev=prev, prev_outs=prev_outs, ctx=branch_ctx
                 )
 
-                out = _parse_system(pipe, prev=prev, ctx=branch_ctx)
+                out_nodes += _as_tuple(out_node)
                 outs += _as_tuple(out)
 
-            if not outs:
+            if not out_nodes:
                 raise RuntimeError("Concurrent pipeline is empty")
 
-            return outs
+            return out_nodes, outs
 
         else:
             raise TypeError(f"Unknown pipeline type in system: {type(pipeline)}")
 
     elif isinstance(pipe, Pipe):
-        return _lower_pipe(pipe, prev, ctx)
+        return _lower_pipe(pipe, prev, prev_outs, ctx)
 
     else:
         raise TypeError(f"Unknown type in system: {type(pipe)}")
 
 
 def _lower_pipe(
-    pipe: Pipe, prev: NodeOrNodes, ctx: _TraversalContext
-) -> Node:  # TODO lower to GPU Nodes
+    pipe: Pipe, prev: NodeOrNodes, prev_outs: Any, ctx: _TraversalContext
+) -> Tuple[Node, Any]:  # TODO lower to GPU Nodes
 
+    outs = pipe(*prev_outs)
     node = DAGNode(
         node_id=ctx.get_name(pipe),
         branch=ctx.get_branch(),
         pipe=pipe,
-        args=_as_tuple(prev) if prev else ()
+        args=_as_tuple(prev) if prev else (),
     )
 
     ctx.push_node(node)
-    return node
+    return node, _as_tuple(outs)

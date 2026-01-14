@@ -22,7 +22,7 @@ class CompiledSystem(Runnable):
 
     def _compile_and_run(self, *args):
         outs = self._inner(*args)  # run if already materialized
-        self._inner = compile_graph(graph=DAG.from_system(self._inner))
+        self._inner = compile_graph(graph=DAG.from_system(self._inner, *args))
 
         self.caller = self._inner
         self.compiled = True
