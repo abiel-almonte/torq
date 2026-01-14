@@ -79,7 +79,7 @@ class _TraversalContext:
         self.nodes.append(node)
 
 
-def lazy_build_graph(system: System, *args) -> Tuple[Nodes, Nodes, Any]:
+def build_graph(system: System, *args) -> Tuple[Nodes, Nodes, Any]:
     ctx = _TraversalContext(
         name=_NameBuilder(tuple(), defaultdict(int)),
         branch=_BranchCounter(0),
