@@ -41,11 +41,14 @@ class DAGNode(Node, Runnable):
 
         return _repr(self)
 
+
 class HostNode(DAGNode):
     pass
 
+
 class DeviceNode(DAGNode):
-    pass # TODO lazy capture graph 
+    pass  # TODO lazy capture graph
+
 
 class SyncNode(DAGNode):
     pass
