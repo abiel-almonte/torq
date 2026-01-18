@@ -4,12 +4,12 @@
 
 
 static PyMethodDef _torq_methods [] = {
-    {"clear_kernel_launch_detected", &clear_kernel_detected, METH_VARARGS, "Clear krnl_launch_deteced flag"},
-    {"get_kernel_launch_detected", &get_kernel_detected, METH_VARARGS, "Check if cuLaunchKernel detected"},
+    {"clear_kernel_launch_detected", &clear_kernel_detected, METH_NOARGS, "Clear kernel_deteced flag"},
+    {"get_kernel_launch_detected", &get_kernel_detected, METH_NOARGS, "Check if cuLaunchKernel detected"},
     {"detect_kernel_launch", &detect_kernel, METH_VARARGS, "Toggle cuLaunchKernel detection"},
 
-    {"clear_synchronization_detected", &clear_sync_detected, METH_VARARGS, "Clear sync_detected flag"},
-    {"get_synchronization_detected", &get_sync_detected, METH_VARARGS, "Check if cudaStreamSynchronize detected"},
+    {"clear_synchronization_detected", &clear_sync_detected, METH_NOARGS, "Clear sync_detected flag"},
+    {"get_synchronization_detected", &get_sync_detected, METH_NOARGS, "Check if cudaStreamSynchronize detected"},
     {"detect_synchronization", &detect_sync, METH_VARARGS, "Toggle cudaStreamSynchronize detection"},
 
     {"launch_graph", &graph_launch, METH_VARARGS, "Launch CUDA Graph"},
