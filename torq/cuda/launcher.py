@@ -1,13 +1,11 @@
 from typing import Optional, Any
 
 from .handlers import CUDAStream, CUDAGraphExec, CUDAGraph
-from .registry import ctxFactory
 
 
 class GraphLauncher:
-    def __init__(self, stream: CUDAStream, stream_ctx: Optional[ctxFactory]):
+    def __init__(self, stream: CUDAStream):
         self._stream = stream
-        self._stream_ctx = stream_ctx
         self._graph = CUDAGraph()
         self._exec: Optional[CUDAGraphExec] = None
 
@@ -22,14 +20,9 @@ class GraphLauncher:
 
     def __enter__(self) -> "GraphLauncher":
         self._graph.begin_capture(self._stream)
-        if self._stream_ctx:
-            self._stream_ctx.__enter__()
         return self
 
     def __exit__(self, *args: Any) -> None:
-        if self._stream_ctx:
-            self._stream_ctx.__exit__(*args)
-
         self._graph.end_capture(self._stream)
         self._exec = CUDAGraphExec(self._graph)
         self._stream.synchronize()

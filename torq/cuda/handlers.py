@@ -1,7 +1,7 @@
 from typing import Optional
 
 from .types import *
-from . import _torq
+from . import _torq as _C
 
 
 class Handler:
@@ -12,7 +12,7 @@ class Handler:
 
     @property
     def ptr(self) -> ptr_t:
-        get_ptr_fn = getattr(_torq, f"get_{self._name}_ptr")
+        get_ptr_fn = getattr(_C, f"get_{self._name}_ptr")
         return get_ptr_fn(self._handler)
 
     def __repr__(self) -> str:
@@ -23,11 +23,11 @@ class CUDAStream(Handler):
     _name = "stream"
 
     def __init__(self) -> None:
-        stream: cudaStream_t = _torq.create_stream()
+        stream: cudaStream_t = _C.create_stream()
         super().__init__(stream)
 
     def synchronize(self) -> None:
-        _torq.sync_stream(self._handler)
+        _C.sync_stream(self._handler)
 
 
 class CUDAGraph(Handler):
@@ -37,20 +37,20 @@ class CUDAGraph(Handler):
         super().__init__(graph)
 
     def begin_capture(self, stream: CUDAStream) -> None:
-        _torq.begin_capture(stream._handler)
-        _torq.inject_stream(stream._handler)
+        _C.inject_stream(stream._handler)
+        _C.begin_capture(stream._handler)
 
     def end_capture(self, stream: CUDAStream) -> None:
-        self._handler: cudaGraph_t = _torq.end_capture(stream._handler)
-        _torq.clear_injection()
+        self._handler: cudaGraph_t = _C.end_capture(stream._handler)
+        _C.clear_injection()
 
     def launch(self, exec: "CUDAGraphExec", stream: CUDAStream) -> None:
-        _torq.launch_graph(exec._handler, stream._handler)
+        _C.launch_graph(exec._handler, stream._handler)
 
 
 class CUDAGraphExec(Handler):
     _name = "executor"
 
     def __init__(self, graph: CUDAGraph) -> None:
-        executor: cudaGraph_t = _torq.create_executor(graph._handler)
+        executor: cudaGraph_t = _C.create_executor(graph._handler)
         super().__init__(executor)
