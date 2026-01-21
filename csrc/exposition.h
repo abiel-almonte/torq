@@ -2,6 +2,7 @@
 #define _TORQ_EXPOSITION_H
 #include "utils.h"
 
+
 // synchronization
 PyObject* device_sync(PyObject* self, PyObject *args);
 PyObject* stream_sync(PyObject* self, PyObject* args);

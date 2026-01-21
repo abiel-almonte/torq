@@ -1,4 +1,4 @@
-#include "../exposition.h"
+#include "exposition.h"
 
 
 PyObject* device_sync(PyObject* self, PyObject *args){
