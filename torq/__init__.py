@@ -19,4 +19,4 @@ try:
 
     HAS_CUDA = True
 except ImportError as e:
-    print(e)
+    pass
