@@ -1095,7 +1095,8 @@ vision = [
     { name = "opencv-python" },
     { name = "torch" },
 ]
-visionrt-linux = [
+visionrt = [
+    { name = "torch" },
     { name = "visionrt" },
 ]
 
@@ -1109,9 +1110,10 @@ requires-dist = [
     { name = "jax", extras = ["cuda13"], marker = "extra == 'vision'" },
     { name = "opencv-python", marker = "extra == 'vision'" },
     { name = "torch", marker = "extra == 'vision'" },
-    { name = "visionrt", marker = "extra == 'visionrt-linux'", url = "https://github.com/abiel-almonte/visionrt/releases/download/v0.2.0/visionrt-0.1.0-cp313-cp313-linux_x86_64.whl" },
+    { name = "torch", marker = "extra == 'visionrt'" },
+    { name = "visionrt", marker = "extra == 'visionrt'", url = "https://github.com/abiel-almonte/visionrt/releases/download/v0.2.0/visionrt-0.1.0-cp313-cp313-linux_x86_64.whl" },
 ]
-provides-extras = ["vision", "visionrt-linux"]
+provides-extras = ["vision", "visionrt"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "black" }]
