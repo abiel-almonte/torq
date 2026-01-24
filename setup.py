@@ -16,7 +16,7 @@ ctorq_extension = Extension(
 
 setup(
     name="torq",
-    packages=["torq", "torq.cuda"],
+    packages=["torq", "torq.cuda", "torq.core", "torq.compiler", "torq.compiler._fulqrum"],
     package_data={
         "torq": ["*.pyi", "py.typed"],
         "torq.cuda": ["*.pyi", "py.typed"]
