@@ -3,7 +3,7 @@ from typing import Callable
 from . import _C
 
 
-class Interceptor:
+class Detector:
     def __init__(self, toggle: Callable, flag_name: str) -> None:
         self._toggle = toggle
         self._get_flag = getattr(_C, f"get_{flag_name}")
@@ -18,7 +18,7 @@ class Interceptor:
         self._toggle(False)
 
 
-class SynchronizationDetector(Interceptor):
+class SynchronizationDetector(Detector):
     def __init__(self):
         super().__init__(_C.detect_synchronization, "synchronization_detected")
 
@@ -27,7 +27,7 @@ class SynchronizationDetector(Interceptor):
         return self._get_flag()
 
 
-class KernelLaunchDetector(Interceptor):
+class KernelLaunchDetector(Detector):
     def __init__(self):
         super().__init__(_C.detect_kernel_launch, "kernel_launch_detected")
 
