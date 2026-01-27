@@ -27,6 +27,7 @@ const symbol_entry_t torq_registry[] = {
     SYMBOL_ENTRY(cudaLaunchCooperativeKernel),
     
     // Memory - Driver API
+    SYMBOL_ENTRY(cuMemAlloc_v2),
     SYMBOL_ENTRY(cuMemcpyAsync),
     SYMBOL_ENTRY(cuMemcpy2DAsync_v2),
     SYMBOL_ENTRY(cuMemcpy3DAsync_v2),
@@ -36,6 +37,7 @@ const symbol_entry_t torq_registry[] = {
     SYMBOL_ENTRY(cuMemsetD32Async),
     
     // Memory - Runtime API
+    SYMBOL_ENTRY(cudaMalloc),
     SYMBOL_ENTRY(cudaMemcpyAsync),
     SYMBOL_ENTRY(cudaMemcpy2DAsync),
     SYMBOL_ENTRY(cudaMemcpy3DAsync),
