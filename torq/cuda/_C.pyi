@@ -73,3 +73,19 @@ def inject_stream(stream: cudaStream_t) -> None:
 def clear_injection() -> None:
     """Remove injected CUDA Stream from kernel launch"""
     ...
+
+def trace_memory(node_id: str) -> None:
+    """Trace device pointers"""
+    ...
+
+def end_trace(node_id: str) -> None:
+    """Stop tracing device pointers"""
+    ...
+
+def set_tracer(node_id: str) -> None:
+    """Use the traced device pointers"""
+    ...
+
+def unset_tracer() -> None:
+    """Stop using the traced device pointers"""
+    ...

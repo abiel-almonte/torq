@@ -4,6 +4,11 @@
 
 
 static PyMethodDef _torq_methods [] = {
+    {"unset_tracer", &unset_tracer, METH_NOARGS,  "Stop using the traced device pointers"},
+    {"set_tracer", &set_tracer, METH_VARARGS,  "Use the traced device pointers"},
+    {"end_trace", &end_trace, METH_VARARGS, "Stop tracing device pointers"},
+    {"trace_memory", &trace_memory, METH_VARARGS,  "Trace device pointers"},
+
     {"clear_injection", &clear_injection, METH_NOARGS, "Remove injected CUDA Stream from kernel launch"},
     {"inject_stream", &inject_stream, METH_VARARGS, "Inject CUDA Stream into kernel launch"},
 
