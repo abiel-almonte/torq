@@ -21,7 +21,7 @@ class CompiledSystem(Runnable):
         self.compiled = False
 
     def _compile_and_run(self, *args):
-        outs = self._inner(*args)  # run if already materialized
+        outs = self._inner(*args)  # warmup, ensure all model allocations are made. run if already materialized
         self._inner = compile_graph(graph=DAG.from_system(self._inner, *args))
 
         self.caller = self._inner
