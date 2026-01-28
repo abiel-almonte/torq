@@ -9,6 +9,9 @@
 #include "state.h"
 
 
+static void* cuda_handler = NULL;
+static void* cudnn_handler = NULL;
+
 static inline void* _get_real_dlsym(void){
     static void* (*real_dlsym)(void*, const char*) = NULL;
     
@@ -46,9 +49,21 @@ static inline void* _get_real_dlsym(void){
     } \
 }
 
+// get the next symbol for shared libs that are already binded
+#define _LOAD_NEXT_SYMBOL(real_fn_symbol, real_fn) { \
+    if (!(real_fn)) { \
+        void* (*_real_dlsym)(void*, const char*) = _get_real_dlsym(); \
+        real_fn = (real_fn_symbol##_fn)_real_dlsym(RTLD_NEXT, #real_fn_symbol); \
+        if (!real_fn) { \
+            fprintf(stderr, "Unable to fetch real " #real_fn_symbol); \
+            abort(); \
+        } \
+    } \
+}
+
 // get the real symbol from cuda runtime
 #define _LOAD_CUDART_SYMBOL(real_fn_symbol, real_fn) { \
-    _LOAD_SYMBOL(cudart_handler, libcudart.so, real_fn_symbol, real_fn) \
+    _LOAD_NEXT_SYMBOL(real_fn_symbol, real_fn) \
 }
 
 // get the real symbol from cuda driver

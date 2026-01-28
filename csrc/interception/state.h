@@ -7,11 +7,6 @@
 extern bool torq_debug;
 
 // Shared state for interception
-extern void* cudart_handler;
-extern void* cuda_handler;
-extern void* cudnn_handler;
-
-
 extern bool sync_detection_enabled;
 extern bool sync_detected;
 
