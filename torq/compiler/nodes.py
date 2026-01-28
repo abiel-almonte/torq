@@ -71,7 +71,6 @@ class DeviceNode(DAGNode):
         self._captured_outs = None
     
     def __call__(self, *args):
-        print("Device pointer: ", args[0].data_ptr())
         if self._launcher is None:
             stream = Stream(self.branch) # TODO create a resource assigner to get stream from branch
 
