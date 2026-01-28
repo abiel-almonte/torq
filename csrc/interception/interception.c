@@ -5,9 +5,14 @@
 
 bool torq_debug = false;
 
-void* cudart_handler = NULL;
-void* cuda_handler = NULL;
-void* cudnn_handler = NULL;
+__attribute__((constructor))
+static void torq_debug_init(void) {
+    const char* debug_env = getenv("TORQ_DEBUG");
+    if (debug_env && debug_env[0] == '1') {
+        torq_debug = true;
+        fprintf(stderr, "[torq] Debug mode enabled\n");
+    }
+}
 
 bool sync_detection_enabled = false;
 bool sync_detected = false;
