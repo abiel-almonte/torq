@@ -2,6 +2,7 @@ from typing import Any
 
 
 from ..core import Runnable, Input, Output, System
+from ..utils import _as_tuple
 
 from .types import Node, Nodes
 from .frontend import build_graph
@@ -39,7 +40,7 @@ class DAG(Runnable):
 
         for node in self:
             if not node.args and args:
-                cache[node] = node(*next(args_iter))
+                cache[node] = node(*_as_tuple(next(args_iter)))
             else:
                 ins = tuple(cache[arg] for arg in node.args)
                 cache[node] = node(*ins)
